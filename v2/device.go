@@ -141,6 +141,12 @@ func (s *DeviceClient) Disconnect(quiesce uint) {
 // Publish publishes a message.
 // Currently, qos and retained arguments are ignored and ones specified in the options are used.
 func (s *DeviceClient) Publish(topic string, qos byte, retained bool, payload interface{}) mqtt.Token {
+	if qos == 0 {
+		// We use paho's `Publish` directly when QoS is 0.
+		return s.cli.Publish(topic, 0, retained, payload)
+	}
+
+	// When QoS > 0, we use the publish queue.
 	s.publishCh <- &pubqueue.Data{Topic: topic, Payload: payload}
 	return &mqtt.DummyToken{}
 }
